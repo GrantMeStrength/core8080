@@ -12,6 +12,7 @@
 		52A3DA262256D3050078EAD7 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 52A3DA242256D3050078EAD7 /* Main.storyboard */; };
 		52A3DA282256D3060078EAD7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 52A3DA272256D3060078EAD7 /* Assets.xcassets */; };
 		52A3DA2B2256D3060078EAD7 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 52A3DA292256D3060078EAD7 /* LaunchScreen.storyboard */; };
+		52A3DA332256D36A0078EAD7 /* Assemble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A3DA322256D36A0078EAD7 /* Assemble.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +23,8 @@
 		52A3DA272256D3060078EAD7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		52A3DA2A2256D3060078EAD7 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		52A3DA2C2256D3060078EAD7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		52A3DA322256D36A0078EAD7 /* Assemble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assemble.swift; sourceTree = "<group>"; };
+		52A3DA3622591E840078EAD7 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,6 +41,7 @@
 		52A3DA142256D3050078EAD7 = {
 			isa = PBXGroup;
 			children = (
+				52A3DA3622591E840078EAD7 /* README.md */,
 				52A3DA1F2256D3050078EAD7 /* 8080Core */,
 				52A3DA1E2256D3050078EAD7 /* Products */,
 			);
@@ -60,6 +64,7 @@
 				52A3DA272256D3060078EAD7 /* Assets.xcassets */,
 				52A3DA292256D3060078EAD7 /* LaunchScreen.storyboard */,
 				52A3DA2C2256D3060078EAD7 /* Info.plist */,
+				52A3DA322256D36A0078EAD7 /* Assemble.swift */,
 			);
 			path = 8080Core;
 			sourceTree = "<group>";
@@ -136,6 +141,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				52A3DA232256D3050078EAD7 /* ViewController.swift in Sources */,
+				52A3DA332256D36A0078EAD7 /* Assemble.swift in Sources */,
 				52A3DA212256D3050078EAD7 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -289,7 +295,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.craicdesign.-080Core";
+				PRODUCT_BUNDLE_IDENTIFIER = com.craicdesign.8080Core;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -307,7 +313,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.craicdesign.-080Core";
+				PRODUCT_BUNDLE_IDENTIFIER = com.craicdesign.8080Core;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
