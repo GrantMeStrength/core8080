@@ -12,7 +12,9 @@ class ViewController: UIViewController, UITextViewDelegate {
 
     var sourceCode : String = ""
     var assemblerOutput : String = ""
-    var octalOutput : String = ""
+    var octalOutput : String = "(Assemble some code to see the octal codes here.)"
+    
+    var previousKeyWasNewLine = false // Used for tab shortcut. Bear with me.
     
     @IBOutlet weak var editor: UITextView!
     @IBOutlet weak var segmentedControl: UISegmentedControl!
@@ -23,6 +25,15 @@ class ViewController: UIViewController, UITextViewDelegate {
         // Do any additional setup after loading the view.
         editor.delegate = self
         sourceCode = editor.text
+        
+        // Add a triple-tap for inserting a tab. How can we code without tabs?!
+        let tap = UITapGestureRecognizer(target: self, action: #selector(insertTab))
+        tap.numberOfTapsRequired = 3
+        view.addGestureRecognizer(tap)
+    }
+    
+    @objc func insertTab() {
+        editor.insertText("\t")
     }
     
     func textViewDidChange(_ textView: UITextView) {
@@ -62,13 +73,10 @@ class ViewController: UIViewController, UITextViewDelegate {
         highlightErrors()
         }
     
-    // String attributes for style
-    let redText = [ NSAttributedString.Key.foregroundColor: UIColor.red ]
-    let regularText = [ NSAttributedString.Key.foregroundColor: UIColor.black ]
     
     func highlightErrors()
     {
-    
+        // Bug - only highlights first instance of an error
         let string:NSMutableAttributedString =  NSMutableAttributedString(string: editor.text)
         
         let separators = CharacterSet(charactersIn: " ;\n\t")
@@ -87,7 +95,6 @@ class ViewController: UIViewController, UITextViewDelegate {
         editor.attributedText = string
     
     }
-    
-    
+
 }
 

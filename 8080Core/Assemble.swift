@@ -123,7 +123,11 @@ class Assemble : NSObject {
                     {
                          if opcode == "ORG"
                          {
-                            opCounter = opCounter + 2
+                            // In the first pass, the ORG command must be executed too.
+                            opCounter = opCounter + 1
+                            let data = Int(getNumberFromString(number:(code[(opCounter)])))
+                            pc = UInt16(data)
+                            opCounter = opCounter + 1
                             continue
                         }
                 
@@ -201,7 +205,9 @@ class Assemble : NSObject {
                         pc = pc + 1
                         opCounter = opCounter + 1
                         
-                        let data = Int(getNumberFromString(number:(code[(opCounter)])))
+                       
+                        
+                       let data = Int(getNumberFromString(number:(code[(opCounter)])))
                         
                         OutputByte(thebyte: Int(data))
                         pc = pc + 1
@@ -235,6 +241,7 @@ class Assemble : NSObject {
                         if let labelValue = Labels[potentialLabel]
                         {
                             // Found a label
+                            print("Found a label \(potentialLabel) with value \(labelValue)")
                             data = labelValue
             
                         }
@@ -319,7 +326,7 @@ class Assemble : NSObject {
         }
         else
         {
-            print("Error")
+            // Not a number. Maybe a label!
             return (0, false)
         }
        
@@ -331,6 +338,7 @@ class Assemble : NSObject {
         // Label
         if number.contains(":")
         {
+            print("Error")
             return 0xffff
         }
         
