@@ -14,8 +14,9 @@ class ViewController: UIViewController, UITextViewDelegate {
     var assemblerOutput : String = ""
     var octalOutput : String = "(Assemble some code to see the octal codes here.)"
     
-    var previousKeyWasNewLine = false // Used for tab shortcut. Bear with me.
     
+    
+
     @IBOutlet weak var editor: UITextView!
     @IBOutlet weak var segmentedControl: UISegmentedControl!
     
@@ -24,12 +25,14 @@ class ViewController: UIViewController, UITextViewDelegate {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         editor.delegate = self
-        sourceCode = editor.text
+        sourceCode = editor.attributedText.string
         
         // Add a triple-tap for inserting a tab. How can we code without tabs?!
         let tap = UITapGestureRecognizer(target: self, action: #selector(insertTab))
         tap.numberOfTapsRequired = 3
         view.addGestureRecognizer(tap)
+        
+        segmentedControl.setEnabled(false, forSegmentAt: 2)
     }
     
     @objc func insertTab() {
@@ -42,18 +45,25 @@ class ViewController: UIViewController, UITextViewDelegate {
 
     @IBAction func clickCommand(_ sender: Any) {
         
+        let font = UIFont(name: "Courier New", size: 15)
+        let attributes = [NSAttributedString.Key.font: font]
+        
+       
         switch segmentedControl.selectedSegmentIndex
         {
         case 0:
-            editor.text = sourceCode
+            editor.attributedText = NSAttributedString(string: sourceCode, attributes: attributes as [NSAttributedString.Key : Any])
             editor.isEditable = true
            
         case 1:
             assembleCode()
+             editor.attributedText = NSAttributedString(string: assemblerOutput, attributes: attributes as [NSAttributedString.Key : Any])
             editor.isEditable = false
+            segmentedControl.setEnabled(true, forSegmentAt: 2);
+            //highlightErrors() // broken for now
         
         case 2:
-            editor.text = octalOutput
+            editor.attributedText = NSAttributedString(string: octalOutput, attributes: attributes as [NSAttributedString.Key : Any])
             editor.isEditable = false
             
         default:
@@ -61,23 +71,24 @@ class ViewController: UIViewController, UITextViewDelegate {
         }
     }
     
-    func assembleCode() {
-        
+    func assembleCode()
+    {
         let CPU = Assemble()
         let tokenized = CPU.Tokenize(code: sourceCode)
-        print(tokenized)
         let resultOutput = CPU.TwoPass(code: tokenized)
         assemblerOutput = resultOutput.1
         octalOutput = resultOutput.0
-        editor.text = assemblerOutput
-        highlightErrors()
-        }
+    }
     
     
     func highlightErrors()
     {
-        // Bug - only highlights first instance of an error
-        let string:NSMutableAttributedString =  NSMutableAttributedString(string: editor.text)
+        // Bug - Supposed to highlight the word ERROR in red, but doesn't.
+        
+        let font = UIFont(name: "Courier New", size: 15)
+        let attributes = [NSAttributedString.Key.font: font]
+        
+        let string:NSMutableAttributedString =  NSMutableAttributedString(string: assemblerOutput, attributes: attributes as [NSAttributedString.Key : Any]) 
         
         let separators = CharacterSet(charactersIn: " ;\n\t")
         let words = editor!.text.components(separatedBy: separators)
@@ -92,7 +103,7 @@ class ViewController: UIViewController, UITextViewDelegate {
                 }
         }
         
-        editor.attributedText = string
+        editor.attributedText = NSAttributedString(string: assemblerOutput, attributes: attributes as [NSAttributedString.Key : Any])
     
     }
 

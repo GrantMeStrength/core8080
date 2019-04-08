@@ -25,7 +25,7 @@ class Assemble : NSObject {
     func Tokenize (code : String) -> [String]
     {
         // Go through separate lines, deleting lines that are comments i.e. start with ;
-        // Unfortunately they won't appear in the assembled code, so consider storing them
+        // Unfortunately they won't appear in the assembled code listing, so consider storing them
         // and re-displaying them in the right location.
         let lineseparators = CharacterSet(charactersIn: "\n")
         let linesofcode = code.components(separatedBy: lineseparators)
@@ -33,21 +33,28 @@ class Assemble : NSObject {
    
         for everyLine in linesofcode
         {
-            if !everyLine.trimmingCharacters(in: .whitespacesAndNewlines).starts(with: ";")
+            // Get rid of comments after the opcodes, and comments on their own line
+            let beforeComment = everyLine.split(separator: ";", maxSplits: 1)
+            if beforeComment.count == 2
             {
+                uncommentedCode.append(beforeComment[0] + "\n")
+            }
+            else
+            {
+                if !everyLine.trimmingCharacters(in: .whitespacesAndNewlines).starts(with: ";")
+                {
                 uncommentedCode.append(everyLine + "\n")
+                  }
             }
         }
 
-        // Go through entire source code, and swap op-codes for HEX
-        var tokenizedCode = uncommentedCode.uppercased()
-        
-
+        // Go through entire source code, and swap op-codes for hex codes.
+        var tokenizedCode = uncommentedCode.uppercased().removeExtraSpaces()
         for everyOpCode in i8080
         {
             if let index = i8080.firstIndex(where: {($0.opcode == everyOpCode.opcode)})
             {
-                let detailsHex = String(format :"%02X", index)
+                let detailsHex = String(format :"%02X ", index)
                 tokenizedCode = tokenizedCode.replacingOccurrences(of: everyOpCode.opcode, with: detailsHex )
             }
         }
@@ -78,11 +85,11 @@ class Assemble : NSObject {
                 
                 if pass == 2
                 {
-                    prettyCode.append(String(format :"%03X:", pc) + "\t")
+                    prettyCode.append(String(format :"%04X:", pc) + " ")
                 }
                 
                 let opcode = code[(opCounter)]
-                
+            
                 
                 // Check for labels
                 if opcode.contains(":")
@@ -91,22 +98,14 @@ class Assemble : NSObject {
                     opCounter = opCounter + 1
                     if pass == 2
                     {
-                        prettyCode.append(opcode + "\n")
+                        prettyCode.append("\t\t\t" + opcode.lowercased() + "\n")
                     }
                     continue // Found a label so file it away.
                 }
-                else
-                {
-                    // Not a label, so indent the text so opcode is lined up.
-                    if pass == 2
-                    {
-                        prettyCode.append("\t\t\t")
-                    }
-                }
-                
+              
                 // Process opcodes by length. Trap unknown ones! They'll appear as
                 // non-HEX in the opcode string, as we tokenized everything and
-                // already checked for labels. HOWEVER, they could be #pragmas
+                // already checked for labels. HOWEVER, they could be Directives
                 
                 var opcodeIndex = 0
                 let opcodeData = (getNumberFromHexString(number: opcode))
@@ -117,15 +116,37 @@ class Assemble : NSObject {
                 }
                 else
                 {
-                    // Check for #pragma
+                    // Check for Directives (currently: END, ORG, DATA)
+                    if opcode == "END"
+                    {
+                        if (pass == 2)
+                        {
+                            prettyCode.append("\t\t\t\t\tend")
+                        }
+                        // Skip to end of pass. Advance to go. Do not get $200.
+                        opCounter = 0xffff
+                        continue
+                    }
+                    
                     
                     if (pass == 1)
                     {
+                       
                          if opcode == "ORG"
                          {
                             // In the first pass, the ORG command must be executed too.
                             opCounter = opCounter + 1
-                            let data = Int(getNumberFromString(number:(code[(opCounter)])))
+                            let dataTest = getNumberFromString(number:(code[(opCounter)]))
+                            var data = 0
+                            if dataTest.1
+                            {
+                                data = Int(dataTest.0)
+                            }
+                            else
+                            {
+                                data = 0
+                            }
+                           
                             pc = UInt16(data)
                             opCounter = opCounter + 1
                             continue
@@ -145,9 +166,25 @@ class Assemble : NSObject {
                     if opcode == "ORG"
                     {
                         opCounter = opCounter + 1
-                        let data = Int(getNumberFromString(number:(code[(opCounter)])))
+                        
+                        let dataTest = getNumberFromString(number:(code[(opCounter)]))
+                        var data = 0
+                        if dataTest.1
+                        {
+                            data = Int(dataTest.0)
+                        }
+                        else
+                        {
+                            data = 0
+                            prettyCode.append("\t\t\t\torg ???? Error. No value for org.\n")
+                            buildOK = false
+                            opCounter = opCounter + 1
+                            continue
+                        }
+                        
+                
                         pc = UInt16(data)
-                        prettyCode.append("ORG " + String(format :"%04Xh", data) + "\n")
+                        prettyCode.append("\t\t\t\t\torg " + String(format :"%04Xh", data) + "\n")
                         opCounter = opCounter + 1
                         continue
                     }
@@ -155,8 +192,23 @@ class Assemble : NSObject {
                     if opcode == "DATA"
                     {
                         opCounter = opCounter + 1
-                        let data = Int(getNumberFromString(number:(code[(opCounter)])))
-                        prettyCode.append("DATA " + String(format :"%02Xh", data) + "\n")
+                        let dataTest = getNumberFromString(number:(code[(opCounter)]))
+                        var data = 0
+                        if dataTest.1
+                        {
+                            data = Int(dataTest.0)
+                        }
+                        else
+                        {
+                            data = 0
+                            prettyCode.append("\t\t\t\tdata ???? Error. No data.\n")
+                            buildOK = false
+                            opCounter = opCounter + 1
+                            continue
+                        }
+                        
+                        
+                        prettyCode.append("\t\t\t\tdata " + String(format :"%02Xh", data) + "\n")
                         opCounter = opCounter + 1
                         OutputByte(thebyte: data)
                         pc = pc + 1
@@ -183,7 +235,7 @@ class Assemble : NSObject {
                     {
                         OutputByte(thebyte: opcodeIndex)
                         pc = pc + 1
-                        prettyCode.append(i8080[opcodeIndex].opcode + "\t\t\t" + String(format :"%02X", opcodeIndex) + "\n")
+                        prettyCode.append(String(format :"%02X", opcodeIndex) + "    \t\t\t" + i8080[opcodeIndex].opcode.lowercased() + "\n")
                         opCounter = opCounter + 1
                     }
                     else
@@ -205,14 +257,26 @@ class Assemble : NSObject {
                         pc = pc + 1
                         opCounter = opCounter + 1
                         
-                       
-                        
-                       let data = Int(getNumberFromString(number:(code[(opCounter)])))
+                        let dataTest = getNumberFromString(number:(code[(opCounter)]))
+                        var data = 0
+                        if dataTest.1
+                        {
+                            data = Int(dataTest.0)
+                        }
+                        else
+                        {
+                            data = 0
+                            prettyCode.append("\t\t\ti8080[opcodeIndex].opcode.lowercased()" + " Error with opcode");
+                            buildOK = false
+                            opCounter = opCounter + 1
+                            continue
+                        }
+                    
                         
                         OutputByte(thebyte: Int(data))
                         pc = pc + 1
                         
-                        prettyCode.append(i8080[opcodeIndex].opcode + " " + String(format :"%02Xh", data) + "\t\t\t" + String(format :"%02X ",opcodeIndex) + String(format :"%02X", data) + "\n");
+                        prettyCode.append(String(format :"%02X",opcodeIndex) + String(format :"%02X", data) + "  \t\t\t" + i8080[opcodeIndex].opcode.lowercased() + " " + String(format :"%02Xh", data) + "\n");
                         opCounter = opCounter + 1
                     }
                     else
@@ -229,25 +293,40 @@ class Assemble : NSObject {
                     
                     if pass == 2
                     {
+                        var dataFromLabel = false
+                        
                         OutputByte(thebyte: opcodeIndex)
                         pc = pc + 1
                         opCounter = opCounter + 1
                         
                         // Check for presence of label
-                        let potentialLabel = code[opCounter]
+                        let potentialLabel = code[opCounter] + ":"
                         
                         var data : UInt16 = 0
                         
                         if let labelValue = Labels[potentialLabel]
                         {
                             // Found a label
-                            print("Found a label \(potentialLabel) with value \(labelValue)")
                             data = labelValue
-            
+                            dataFromLabel = true
                         }
                         else
                         {
-                            data = getNumberFromString(number: code[(opCounter)])
+                            
+                            let dataTest = getNumberFromString(number:(code[(opCounter)]))
+                            if dataTest.1
+                            {
+                                data = UInt16(dataTest.0)
+                            }
+                            else
+                            {
+                                buildOK = false
+                                prettyCode.append(String(format :"%02X", opcodeIndex) +  "?? ?? \t\t\t" + i8080[opcodeIndex].opcode.lowercased() + "????\n Error with label")
+                                opCounter = opCounter + 1
+                                continue
+                            }
+                            
+                            
                         }
                         
                         
@@ -265,11 +344,18 @@ class Assemble : NSObject {
                         if L == 255 && H == 255 // Label not found
                         {
                             buildOK = false
-                            prettyCode.append(i8080[opcodeIndex].opcode + " " + "???? " + "\t\t\t" + String(format :"%02X ", opcodeIndex) +  "?? ?? \n")
+                            prettyCode.append(String(format :"%02X", opcodeIndex) +  "?? ?? \t\t\t" + i8080[opcodeIndex].opcode.lowercased() + "????\n")
                         }
                         else
                         {
-                        prettyCode.append(i8080[opcodeIndex].opcode + " " + String(format :"%04Xh", data) + "\t\t\t" + String(format :"%02X ", opcodeIndex) + String(format :"%02X ", L) + String(format :"%02X ", H) + "\n")
+                            if dataFromLabel
+                            {
+                                 prettyCode.append(String(format :"%02X", opcodeIndex) + String(format :"%02X", L) + String(format :"%02X", H) + "\t\t\t" + i8080[opcodeIndex].opcode.lowercased() + " " + potentialLabel.lowercased() + "\n")
+                            }
+                            else
+                            {
+                            prettyCode.append(String(format :"%02X", opcodeIndex) + String(format :"%02X", L) + String(format :"%02X", H) + "\t\t\t" + i8080[opcodeIndex].opcode.lowercased() + " " + String(format :"%04Xh", data) + "\n")
+                            }
                         }
                     }
                     else
@@ -284,14 +370,12 @@ class Assemble : NSObject {
             
         }
         
-        print("\n\nOctal\n")
-        print(objectCode)
-        print("\n\nAssembler\n")
-        print(prettyCode)
+
         
         if buildOK
         {
             prettyCode.append("\n\nAssembled OK");
+            objectCode = objectCode + "\n\n\n\n\nOctal version of assembled code, ideal for devices which require entering codes manually via switches. If an ORG statement was used, remember to check addresses in case they changed from sequential ordering."
         }
         else
         {
@@ -332,14 +416,13 @@ class Assemble : NSObject {
        
     }
     
-    func getNumberFromString(number : String) -> UInt16
+    func getNumberFromString(number : String) -> (UInt16, Bool)
     {
         
         // Label
         if number.contains(":")
         {
-            print("Error")
-            return 0xffff
+            return (0xffff, false)
         }
         
         // Hex
@@ -347,24 +430,48 @@ class Assemble : NSObject {
         {
             var hex =  number.replacingOccurrences(of: "H", with: "")
             hex =  hex.replacingOccurrences(of: "h", with: "")
-            return UInt16(hex, radix:16)!
+            if let converted = UInt16(hex, radix:16)
+            {
+                return (converted, true)
+            }
+            else
+            {
+                return (0, false)
+            }
         }
         
         // Octal
         if number.contains("O")
         {
             let octal =  number.replacingOccurrences(of: "O", with: "")
-            return UInt16(octal, radix:8)!
+            
+            if let converted = UInt16(octal, radix:8)
+            {
+                return (converted, true)
+            }
+            else
+            {
+                return (0, false)
+            }
+            
         }
         
         // BINARY
         if number.contains("B")
         {
             let binary =  number.replacingOccurrences(of: "B", with: "")
-            return UInt16(binary, radix:2)!
+            if let converted = UInt16(binary, radix:2)
+            {
+                return (converted, true)
+            }
+            else
+            {
+                return (0, false)
+            }
+            
         }
         
-        return UInt16(number)!
+        return (UInt16(number)!, true)
         
     }
     
@@ -629,3 +736,14 @@ class Assemble : NSObject {
     ]
     
 }
+
+
+extension String {
+    
+    func removeExtraSpaces() -> String {
+        return self.replacingOccurrences(of: "[\\ \t]+", with: " ", options: .regularExpression, range: nil)
+    }
+    
+}
+
+
