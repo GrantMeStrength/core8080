@@ -20,7 +20,7 @@ class Assemble : NSObject {
     // Store labels
     var Labels : Dictionary = [String:UInt16]()
     
-
+    
     // Turn as much into hex immediately to avoid having to parse anything. Commas = yuck
     func Tokenize (code : String) -> [String]
     {
@@ -30,7 +30,7 @@ class Assemble : NSObject {
         let lineseparators = CharacterSet(charactersIn: "\n")
         let linesofcode = code.components(separatedBy: lineseparators)
         var uncommentedCode = ""
-   
+        
         for everyLine in linesofcode
         {
             // Get rid of comments after the opcodes, and comments on their own line
@@ -43,11 +43,11 @@ class Assemble : NSObject {
             {
                 if !everyLine.trimmingCharacters(in: .whitespacesAndNewlines).starts(with: ";")
                 {
-                uncommentedCode.append(everyLine + "\n")
-                  }
+                    uncommentedCode.append(everyLine + "\n")
+                }
             }
         }
-
+        
         // Go through entire source code, and swap op-codes for hex codes.
         var tokenizedCode = uncommentedCode.uppercased().removeExtraSpaces()
         for everyOpCode in i8080
@@ -75,6 +75,12 @@ class Assemble : NSObject {
         
         var buildOK = true
         
+        // Check for empty file.. not a lot we can do with noting.
+        if code.isEmpty
+        {
+            return("\n\nNo code to assemble.","")
+        }
+        
         for pass in 1...2
         {
             pc = 0
@@ -89,7 +95,7 @@ class Assemble : NSObject {
                 }
                 
                 let opcode = code[(opCounter)]
-            
+                
                 
                 // Check for labels
                 if opcode.contains(":")
@@ -102,7 +108,7 @@ class Assemble : NSObject {
                     }
                     continue // Found a label so file it away.
                 }
-              
+                
                 // Process opcodes by length. Trap unknown ones! They'll appear as
                 // non-HEX in the opcode string, as we tokenized everything and
                 // already checked for labels. HOWEVER, they could be Directives
@@ -131,9 +137,9 @@ class Assemble : NSObject {
                     
                     if (pass == 1)
                     {
-                       
-                         if opcode == "ORG"
-                         {
+                        
+                        if opcode == "ORG"
+                        {
                             // In the first pass, the ORG command must be executed too.
                             opCounter = opCounter + 1
                             let dataTest = getNumberFromString(number:(code[(opCounter)]))
@@ -146,12 +152,12 @@ class Assemble : NSObject {
                             {
                                 data = 0
                             }
-                           
+                            
                             pc = UInt16(data)
                             opCounter = opCounter + 1
                             continue
                         }
-                
+                        
                         if opcode == "DATA"
                         {
                             opCounter = opCounter + 2
@@ -163,57 +169,57 @@ class Assemble : NSObject {
                     
                     if (pass == 2)
                     {
-                    if opcode == "ORG"
-                    {
-                        opCounter = opCounter + 1
-                        
-                        let dataTest = getNumberFromString(number:(code[(opCounter)]))
-                        var data = 0
-                        if dataTest.1
+                        if opcode == "ORG"
                         {
-                            data = Int(dataTest.0)
-                        }
-                        else
-                        {
-                            data = 0
-                            prettyCode.append("\t\t\t\torg ???? Error. No value for org.\n")
-                            buildOK = false
+                            opCounter = opCounter + 1
+                            
+                            let dataTest = getNumberFromString(number:(code[(opCounter)]))
+                            var data = 0
+                            if dataTest.1
+                            {
+                                data = Int(dataTest.0)
+                            }
+                            else
+                            {
+                                data = 0
+                                prettyCode.append("\t\t\t\torg ???? Error. No value for org.\n")
+                                buildOK = false
+                                opCounter = opCounter + 1
+                                continue
+                            }
+                            
+                            
+                            pc = UInt16(data)
+                            prettyCode.append("\t\t\t\t\torg " + String(format :"%04Xh", data) + "\n")
                             opCounter = opCounter + 1
                             continue
                         }
                         
-                
-                        pc = UInt16(data)
-                        prettyCode.append("\t\t\t\t\torg " + String(format :"%04Xh", data) + "\n")
-                        opCounter = opCounter + 1
-                        continue
-                    }
-                    
-                    if opcode == "DATA"
-                    {
-                        opCounter = opCounter + 1
-                        let dataTest = getNumberFromString(number:(code[(opCounter)]))
-                        var data = 0
-                        if dataTest.1
+                        if opcode == "DATA"
                         {
-                            data = Int(dataTest.0)
-                        }
-                        else
-                        {
-                            data = 0
-                            prettyCode.append("\t\t\t\tdata ???? Error. No data.\n")
-                            buildOK = false
                             opCounter = opCounter + 1
+                            let dataTest = getNumberFromString(number:(code[(opCounter)]))
+                            var data = 0
+                            if dataTest.1
+                            {
+                                data = Int(dataTest.0)
+                            }
+                            else
+                            {
+                                data = 0
+                                prettyCode.append("\t\t\t\tdata ???? Error. No data.\n")
+                                buildOK = false
+                                opCounter = opCounter + 1
+                                continue
+                            }
+                            
+                            
+                            prettyCode.append("\t\t\t\tdata " + String(format :"%02Xh", data) + "\n")
+                            opCounter = opCounter + 1
+                            OutputByte(thebyte: data)
+                            pc = pc + 1
                             continue
                         }
-                        
-                        
-                        prettyCode.append("\t\t\t\tdata " + String(format :"%02Xh", data) + "\n")
-                        opCounter = opCounter + 1
-                        OutputByte(thebyte: data)
-                        pc = pc + 1
-                        continue
-                    }
                     }
                     
                     if pass == 2
@@ -271,7 +277,7 @@ class Assemble : NSObject {
                             opCounter = opCounter + 1
                             continue
                         }
-                    
+                        
                         
                         OutputByte(thebyte: Int(data))
                         pc = pc + 1
@@ -350,11 +356,11 @@ class Assemble : NSObject {
                         {
                             if dataFromLabel
                             {
-                                 prettyCode.append(String(format :"%02X", opcodeIndex) + String(format :"%02X", L) + String(format :"%02X", H) + "\t\t\t" + i8080[opcodeIndex].opcode.lowercased() + " " + potentialLabel.lowercased() + "\n")
+                                prettyCode.append(String(format :"%02X", opcodeIndex) + String(format :"%02X", L) + String(format :"%02X", H) + "\t\t\t" + i8080[opcodeIndex].opcode.lowercased() + " " + potentialLabel.lowercased() + "\n")
                             }
                             else
                             {
-                            prettyCode.append(String(format :"%02X", opcodeIndex) + String(format :"%02X", L) + String(format :"%02X", H) + "\t\t\t" + i8080[opcodeIndex].opcode.lowercased() + " " + String(format :"%04Xh", data) + "\n")
+                                prettyCode.append(String(format :"%02X", opcodeIndex) + String(format :"%02X", L) + String(format :"%02X", H) + "\t\t\t" + i8080[opcodeIndex].opcode.lowercased() + " " + String(format :"%04Xh", data) + "\n")
                             }
                         }
                     }
@@ -363,14 +369,14 @@ class Assemble : NSObject {
                         pc = pc + 3
                         opCounter = opCounter + 2
                     }
-
+                    
                 }
                 
             } while (opCounter < code.count && opCounter<256)
             
         }
         
-
+        
         
         if buildOK
         {
@@ -398,10 +404,10 @@ class Assemble : NSObject {
         let CO = String(format :"%03o ", thebyte)
         
         objectCode.append(CO)
-
+        
     }
     
-
+    
     func getNumberFromHexString(number : String) -> (UInt16, Bool)
     {
         if let converted = UInt16(number, radix:16)
@@ -413,7 +419,7 @@ class Assemble : NSObject {
             // Not a number. Maybe a label!
             return (0, false)
         }
-       
+        
     }
     
     func getNumberFromString(number : String) -> (UInt16, Bool)
@@ -471,7 +477,19 @@ class Assemble : NSObject {
             
         }
         
-        return (UInt16(number)!, true)
+        // Decimal
+        
+        
+        if let converted = UInt16(number, radix:10)
+        {
+            return (converted, true)
+        }
+        else
+        {
+            return (0, false)
+        }
+        
+        
         
     }
     
@@ -739,7 +757,7 @@ class Assemble : NSObject {
 
 
 extension String {
-    
+    // Get rid of spaces and tabs to aid with tokenizing.
     func removeExtraSpaces() -> String {
         return self.replacingOccurrences(of: "[\\ \t]+", with: " ", options: .regularExpression, range: nil)
     }
